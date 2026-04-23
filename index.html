@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Log</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" aria-label="Application sidebar">
+        <div class="sidebar-logo">
+            <span class="dot"></span>moodlog
+        </div>
+
+        <nav role="navigation" aria-label="Main navigation">
+            <a class="nav-item active" data-view="checkin" role="button" tabindex="0" aria-label="Check-in view">
+                <span class="nav-icon">✦</span> Check-in
+            </a>
+            <a class="nav-item" data-view="journal" role="button" tabindex="0" aria-label="Journal view">
+                <span class="nav-icon">✦</span> Journal
+            </a>
+            <a class="nav-item" data-view="insights" role="button" tabindex="0" aria-label="Insights view">
+                <span class="nav-icon">✦</span> Insights
+            </a>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="streak-badge" id="sidebar-streak" aria-live="polite">
+            🔥 <span id="streak-text">0 day streak</span>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="dark-toggle" id="dark-toggle" role="button" tabindex="0" aria-label="Toggle dark mode">
+                <span class="toggle-icon" id="toggle-icon">🌙</span>
+                <span id="toggle-label">Dark mode</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content">
+
+        <!-- TOP BAR -->
+        <div class="main-topbar">
+            <h1 id="page-title">How are you feeling?</h1>
+            <div class="topbar-right">
+                <span class="topbar-date" id="topbar-date"></span>
+                <button class="gear-btn" aria-label="Settings" title="Settings">⚙</button>
+            </div>
+        </div>
+
+        <!-- ── VIEW 1: CHECK-IN ── -->
+        <section class="view active" id="view-checkin" aria-label="Daily check-in">
+
+            <!-- Week strip -->
+            <div class="week-strip" id="week-strip" role="list" aria-label="Week mood overview"></div>
+
+            <div class="checkin-grid">
+                <!-- LEFT: Mood + Journal -->
+                <div>
+                    <div class="card" style="margin-bottom:20px;">
+                        <h2>Select your mood</h2>
+                        <div class="mood-row" id="mood-row" role="group" aria-label="Mood selector">
+                            <!-- filled by JS -->
+                        </div>
+                        <div class="journal-area">
+                            <textarea class="journal-textarea" id="journal-input"
+                                placeholder="Add a note about your day…" maxlength="280" rows="5"
+                                aria-label="Journal entry"></textarea>
+                            <span class="char-counter" id="char-counter" aria-live="polite">0 / 280</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Tags + Save -->
+                <div class="card tags-section">
+                    <h2>What emotions are you feeling?</h2>
+                    <div class="tags-grid" id="tags-grid" role="group" aria-label="Emotion tags">
+                        <!-- filled by JS -->
+                    </div>
+                    <button class="save-btn" id="save-btn" aria-label="Save entry">Save entry</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── VIEW 2: JOURNAL ── -->
+        <section class="view" id="view-journal" aria-label="Journal entries">
+            <div class="journal-header">
+                <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter by mood">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+            <div class="entries-grid" id="entries-grid">
+                <!-- filled by JS -->
+            </div>
+        </section>
+
+        <!-- ── VIEW 3: INSIGHTS ── -->
+        <section class="view" id="view-insights" aria-label="Mood insights">
+            <div class="stat-cards" id="stat-cards">
+                <!-- filled by JS -->
+            </div>
+            <div class="insights-grid">
+                <div class="card mood-calendar" id="mood-calendar">
+                    <h2>This Week</h2>
+                    <!-- filled by JS -->
+                </div>
+                <div class="card bar-chart" id="bar-chart-card">
+                    <h2>Mood Distribution</h2>
+                    <div class="bar-chart-inner" id="bar-chart-inner">
+                        <!-- filled by JS -->
+                    </div>
+                    <div id="bar-labels" style="display:flex;gap:12px;"></div>
+                </div>
+            </div>
+            <div class="insight-card" id="insight-card">
+                <p id="insight-text">Loading insight…</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast container -->
+    <div id="toast-container" aria-live="assertive"></div>
+
+    <!-- Emotion camera mount (future integration) -->
+    <!-- <div id="emotion-camera-mount"></div> -->
+
+    <!-- Onboarding -->
+    <div id="onb-overlay" style="display:none;"></div>
+    <div id="onboarding" style="display:none;"></div>
+
+    <script src="data.js" defer></script>
+    <script src="app.js" defer></script>
+
+</body>
+
+</html>
