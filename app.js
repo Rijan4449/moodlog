@@ -6,6 +6,8 @@ let moodState = {
     currentFilter: 'all',
     currentView: 'checkin',
     darkMode: false,
+    moodSource: null,
+    manuallySelected: false,
 };
 
 // ── LOAD FROM STORAGE ──
@@ -127,21 +129,40 @@ ${mood.emoji}
 </div>
 <span class="mood-label">${mood.label}</span>
 `;
-        btn.addEventListener('click', () => selectMood(mood.key));
+        btn.addEventListener('click', () => selectMood(mood.key, 'manual'));
         row.appendChild(btn);
     });
 }
 
-function selectMood(key) {
+function selectMood(key, source) {
     moodState.selectedMood = key;
+    moodState.moodSource = source || 'manual';
+    if (source === 'manual') {
+        moodState.manuallySelected = true;
+        document.dispatchEvent(new CustomEvent('sliders:manual'));
+    }
     renderMoodRow();
 }
 
 // EMOTION_HOOK: call setDetectedEmotion(label) to override mood
 function setDetectedEmotion(label) {
+    if (!label) return;
+
+    const normalized = label.toLowerCase();
+    const byLabel = MOODS.find(m => m.label.toLowerCase() === normalized);
+    const byKey = MOODS.find(m => m.key === normalized);
+    if (byLabel) {
+        selectMood(byLabel.key, 'detected');
+        return;
+    }
+    if (byKey) {
+        selectMood(byKey.key, 'detected');
+        return;
+    }
+
     const moodMap = { happy: 'great', sad: 'bad', angry: 'awful', surprised: 'good', neutral: 'okay', fearful: 'bad', disgusted: 'awful' };
-    const mapped = moodMap[label.toLowerCase()];
-    if (mapped) selectMood(mapped);
+    const mapped = moodMap[normalized];
+    if (mapped) selectMood(mapped, 'detected');
 }
 
 function renderTagsGrid() {
@@ -215,6 +236,10 @@ function setupCheckin() {
         else counter.style.color = '';
     });
 
+    if (window.guidedSliders && window.guidedSliders.init) {
+        window.guidedSliders.init();
+    }
+
     document.getElementById('save-btn').addEventListener('click', saveEntry);
 }
 
@@ -224,12 +249,15 @@ function saveEntry() {
         return;
     }
 
+    const mood = getMood(moodState.selectedMood);
     const entry = {
         id: 'entry_' + Date.now(),
         date: new Date().toISOString(),
         mood: moodState.selectedMood,
+        moodLabel: mood ? mood.label : moodState.selectedMood,
         tags: [...moodState.selectedTags],
         note: moodState.journalText || '',
+        source: moodState.moodSource || 'manual',
     };
 
     moodState.entries.unshift(entry);
@@ -237,6 +265,8 @@ function saveEntry() {
 
     // Reset
     moodState.selectedMood = null;
+    moodState.moodSource = null;
+    moodState.manuallySelected = false;
     moodState.selectedTags = [];
     moodState.journalText = '';
     document.getElementById('journal-input').value = '';
@@ -247,7 +277,10 @@ function saveEntry() {
     renderWeekStrip();
     renderStreak();
 
-    showToast('Entry saved! ✨');
+    showToast('Entry saved ✓');
+    window.suggestions.show(entry.moodLabel);
+    document.dispatchEvent(new CustomEvent('sliders:reset'));
+    switchView('journal');
 }
 
 // ══════════════════════════════════════
@@ -536,7 +569,16 @@ function switchView(view) {
 
     if (view === 'journal') renderJournal();
     if (view === 'insights') renderInsights();
-    if (view === 'checkin') { renderWeekStrip(); renderMoodRow(); renderTagsGrid(); }
+    if (view === 'checkin') {
+        renderWeekStrip();
+        renderMoodRow();
+        renderTagsGrid();
+        if (window.guidedSliders && window.guidedSliders.init) {
+            window.guidedSliders.init();
+        }
+    } else if (window.guidedSliders && window.guidedSliders.destroy) {
+        window.guidedSliders.destroy();
+    }
 }
 
 // ══════════════════════════════════════
