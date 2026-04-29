@@ -95,6 +95,126 @@ function calcAvgMood() {
     return 'Awful';
 }
 
+const POSITIVE_TAGS = new Set([
+    'calm', 'happy', 'grateful', 'excited', 'hopeful', 'proud', 'loved', 'inspired',
+    'focused', 'content', 'playful', 'productive', 'confident', 'curious'
+]);
+const NEGATIVE_TAGS = new Set([
+    'anxious', 'tired', 'frustrated', 'stressed', 'lonely', 'sad', 'angry',
+    'overwhelmed', 'confused', 'numb'
+]);
+
+let savePulseTimer = null;
+
+function setMoodWash(moodKey) {
+    const main = document.getElementById('main-content');
+    if (!main) return;
+    if (!moodKey) {
+        main.style.removeProperty('--mood-wash');
+        return;
+    }
+    const mood = getMood(moodKey);
+    if (!mood) {
+        main.style.removeProperty('--mood-wash');
+        return;
+    }
+    main.style.setProperty('--mood-wash', `${mood.color}18`);
+}
+
+function updateSaveButton() {
+    const btn = document.getElementById('save-btn');
+    if (!btn) return;
+
+    if (!moodState.selectedMood) {
+        btn.textContent = 'Save entry';
+        btn.classList.remove('has-mood', 'pulse', 'saving');
+        btn.style.removeProperty('--save-color');
+        if (savePulseTimer) {
+            clearTimeout(savePulseTimer);
+            savePulseTimer = null;
+        }
+        return;
+    }
+
+    const mood = getMood(moodState.selectedMood);
+    const label = mood ? mood.label : moodState.selectedMood;
+    btn.textContent = `Save - feeling ${label}`;
+    btn.classList.add('has-mood');
+    btn.style.setProperty('--save-color', mood ? mood.color : '');
+    btn.classList.remove('pulse');
+
+    if (savePulseTimer) {
+        clearTimeout(savePulseTimer);
+    }
+    savePulseTimer = setTimeout(() => {
+        if (moodState.selectedMood && !btn.classList.contains('saving')) {
+            btn.classList.add('pulse');
+        }
+    }, 3000);
+}
+
+function renderGreeting() {
+    const block = document.getElementById('greeting-block');
+    if (!block) return;
+
+    const hour = new Date().getHours();
+    let pool = [];
+    if (hour >= 5 && hour <= 11) {
+        pool = [
+            'Good morning. How are you carrying yourself today?',
+            "Morning. What's the first feeling you notice right now?",
+            'A new day. How does it feel so far?'
+        ];
+    } else if (hour >= 12 && hour <= 17) {
+        pool = [
+            "Hey. How's the day treating you?",
+            'Halfway through. How are you holding up?',
+            "Checking in. What's sitting with you right now?"
+        ];
+    } else if (hour >= 18 && hour <= 21) {
+        pool = [
+            'Evening. How did today feel?',
+            "The day's winding down. How are you?",
+            'How are you arriving at the end of today?'
+        ];
+    } else {
+        pool = [
+            'Still up. How are you feeling right now?',
+            "Late night check-in. What's on your mind?",
+            "It's late. How's your heart doing?"
+        ];
+    }
+
+    const greeting = pool[Math.floor(Math.random() * pool.length)];
+    let context = '';
+
+    if (moodState.entries.length) {
+        const last = moodState.entries[0];
+        const lastMood = getMood(last.mood);
+        if (lastMood) {
+            const days = Math.floor((Date.now() - new Date(last.date)) / 86400000);
+            const daysText = days === 0 ? 'today' : (days === 1 ? '1 day ago' : `${days} days ago`);
+            if (lastMood.key === 'great' || lastMood.key === 'good') {
+                context = `You were feeling ${lastMood.label} ${daysText}. Hoping today is just as good.`;
+            } else if (lastMood.key === 'okay') {
+                context = 'Last time you checked in, things felt pretty neutral.';
+            } else {
+                context = 'Last time was tough. Hope today feels a little lighter.';
+            }
+        }
+    }
+
+    block.innerHTML = `
+<div class="greeting-title">${greeting}</div>
+${context ? `<div class="greeting-context">${context}</div>` : ''}
+`;
+
+    block.classList.remove('greeting-animate');
+    requestAnimationFrame(() => {
+        block.classList.add('greeting-animate');
+    });
+}
+
 // ══════════════════════════════════════
 // RENDER HELPERS
 // ══════════════════════════════════════
@@ -141,7 +261,9 @@ function selectMood(key, source) {
         moodState.manuallySelected = true;
         document.dispatchEvent(new CustomEvent('sliders:manual'));
     }
+    setMoodWash(key);
     renderMoodRow();
+    updateSaveButton();
 }
 
 // EMOTION_HOOK: call setDetectedEmotion(label) to override mood
@@ -169,10 +291,16 @@ function renderTagsGrid() {
     const grid = document.getElementById('tags-grid');
     grid.innerHTML = '';
     EMOTION_TAGS.forEach(tag => {
+        const lower = tag.toLowerCase();
         const btn = document.createElement('button');
         btn.className = 'tag-pill' + (moodState.selectedTags.includes(tag) ? ' selected' : '');
         btn.textContent = tag;
         btn.setAttribute('aria-pressed', moodState.selectedTags.includes(tag) ? 'true' : 'false');
+        if (POSITIVE_TAGS.has(lower)) {
+            btn.dataset.valence = 'positive';
+        } else if (NEGATIVE_TAGS.has(lower)) {
+            btn.dataset.valence = 'negative';
+        }
         btn.addEventListener('click', () => toggleTag(tag));
         grid.appendChild(btn);
     });
@@ -209,8 +337,10 @@ function renderWeekStrip() {
         const div = document.createElement('div');
         div.className = 'week-day' + (entry ? ' has-entry' : '') + (isToday ? ' today' : '');
         div.setAttribute('role', 'listitem');
+        div.style.setProperty('--i', (6 - i).toString());
         div.innerHTML = `
 <span class="wd-label">${label}</span>
+    <span class="wd-underline" style="${mood ? `background:${mood.color};` : ''}"></span>
 <div class="wd-dot" style="${mood ? `background:${mood.color}40;` : ''}" title="${mood ? mood.label : 'No entry'}">
 ${mood ? mood.emoji : ''}
 </div>
@@ -223,6 +353,9 @@ function setupCheckin() {
     renderMoodRow();
     renderTagsGrid();
     renderWeekStrip();
+    renderGreeting();
+    updateSaveButton();
+    document.body.classList.add('checkin-view');
 
     const textarea = document.getElementById('journal-input');
     const counter = document.getElementById('char-counter');
@@ -249,6 +382,12 @@ function saveEntry() {
         return;
     }
 
+    const saveBtn = document.getElementById('save-btn');
+    if (saveBtn) {
+        saveBtn.classList.add('saving');
+        saveBtn.textContent = '✓';
+    }
+
     const mood = getMood(moodState.selectedMood);
     const entry = {
         id: 'entry_' + Date.now(),
@@ -269,6 +408,7 @@ function saveEntry() {
     moodState.manuallySelected = false;
     moodState.selectedTags = [];
     moodState.journalText = '';
+    setMoodWash(null);
     document.getElementById('journal-input').value = '';
     document.getElementById('char-counter').textContent = '0 / 280';
 
@@ -281,6 +421,13 @@ function saveEntry() {
     window.suggestions.show(entry.moodLabel);
     document.dispatchEvent(new CustomEvent('sliders:reset'));
     switchView('journal');
+
+    if (saveBtn) {
+        setTimeout(() => {
+            saveBtn.classList.remove('saving');
+            updateSaveButton();
+        }, 600);
+    }
 }
 
 // ══════════════════════════════════════
@@ -565,7 +712,8 @@ function switchView(view) {
         a.classList.toggle('active', a.dataset.view === view);
     });
 
-    document.getElementById('page-title').textContent = VIEW_TITLES[view] || '';
+    document.getElementById('page-title').textContent = view === 'checkin' ? '' : (VIEW_TITLES[view] || '');
+    document.body.classList.toggle('checkin-view', view === 'checkin');
 
     if (view === 'journal') renderJournal();
     if (view === 'insights') renderInsights();
@@ -573,6 +721,8 @@ function switchView(view) {
         renderWeekStrip();
         renderMoodRow();
         renderTagsGrid();
+        renderGreeting();
+        updateSaveButton();
         if (window.guidedSliders && window.guidedSliders.init) {
             window.guidedSliders.init();
         }
