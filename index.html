@@ -68,6 +68,7 @@
                         <div class="mood-row" id="mood-row" role="group" aria-label="Mood selector">
                             <!-- filled by JS -->
                         </div>
+                        <div id="sliders-mount"></div>
                         <div class="journal-area">
                             <textarea class="journal-textarea" id="journal-input"
                                 placeholder="Add a note about your day…" maxlength="280" rows="5"
@@ -128,15 +129,16 @@
     <!-- Toast container -->
     <div id="toast-container" aria-live="assertive"></div>
 
-    <!-- Emotion camera mount (future integration) -->
-    <!-- <div id="emotion-camera-mount"></div> -->
-
     <!-- Onboarding -->
     <div id="onb-overlay" style="display:none;"></div>
     <div id="onboarding" style="display:none;"></div>
 
+    <div id="suggestions-modal-root"></div>
+
     <script src="data.js" defer></script>
     <script src="app.js" defer></script>
+    <script src="suggestions.js" defer></script>
+    <script src="sliders.js" defer></script>
 
 </body>
 
