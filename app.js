@@ -1,5 +1,6 @@
 let moodState = {
     selectedMood: null,
+    selectedSubMood: null,
     selectedTags: [],
     journalText: '',
     entries: [],
@@ -45,6 +46,10 @@ function applyDarkMode() {
 // ══════════════════════════════════════
 
 function getMood(key) { return MOODS.find(m => m.key === key); }
+function getSubMood(primaryKey, subKey) {
+    const list = SUB_MOODS[primaryKey] || [];
+    return list.find(s => s.key === subKey);
+}
 
 function formatDate(iso) {
     const d = new Date(iso);
@@ -254,7 +259,50 @@ ${mood.emoji}
     });
 }
 
+function renderSubMoodRow() {
+    const block = document.getElementById('sub-mood-block');
+    const row = document.getElementById('sub-mood-row');
+    if (!block || !row) return;
+
+    row.innerHTML = '';
+    const primary = moodState.selectedMood;
+    const options = primary ? (SUB_MOODS[primary] || []) : [];
+
+    if (!options.length) {
+        block.style.display = 'none';
+        return;
+    }
+
+    block.style.display = 'block';
+    options.forEach(sub => {
+        const btn = document.createElement('button');
+        btn.className = 'sub-mood-btn' + (moodState.selectedSubMood === sub.key ? ' selected' : '');
+        btn.setAttribute('aria-label', sub.label);
+        btn.setAttribute('aria-pressed', moodState.selectedSubMood === sub.key ? 'true' : 'false');
+        btn.style.setProperty('--ring-color', sub.color);
+        btn.innerHTML = `
+<div class="sub-mood-circle" style="background:${sub.color}30;">
+${sub.emoji}
+</div>
+<span class="sub-mood-label">${sub.label}</span>
+`;
+        btn.addEventListener('click', () => selectSubMood(sub.key));
+        row.appendChild(btn);
+    });
+
+    row.classList.remove('animate-in');
+    requestAnimationFrame(() => {
+        row.classList.add('animate-in');
+    });
+}
+
+function selectSubMood(key) {
+    moodState.selectedSubMood = key;
+    renderSubMoodRow();
+}
+
 function selectMood(key, source) {
+    moodState.selectedSubMood = null;
     moodState.selectedMood = key;
     moodState.moodSource = source || 'manual';
     if (source === 'manual') {
@@ -263,6 +311,7 @@ function selectMood(key, source) {
     }
     setMoodWash(key);
     renderMoodRow();
+    renderSubMoodRow();
     updateSaveButton();
 }
 
@@ -351,6 +400,7 @@ ${mood ? mood.emoji : ''}
 
 function setupCheckin() {
     renderMoodRow();
+    renderSubMoodRow();
     renderTagsGrid();
     renderWeekStrip();
     renderGreeting();
@@ -389,11 +439,16 @@ function saveEntry() {
     }
 
     const mood = getMood(moodState.selectedMood);
+    const subMood = moodState.selectedSubMood
+        ? getSubMood(moodState.selectedMood, moodState.selectedSubMood)
+        : null;
     const entry = {
         id: 'entry_' + Date.now(),
         date: new Date().toISOString(),
         mood: moodState.selectedMood,
         moodLabel: mood ? mood.label : moodState.selectedMood,
+        subMood: moodState.selectedSubMood || null,
+        subMoodLabel: subMood ? subMood.label : null,
         tags: [...moodState.selectedTags],
         note: moodState.journalText || '',
         source: moodState.moodSource || 'manual',
@@ -406,13 +461,19 @@ function saveEntry() {
     moodState.selectedMood = null;
     moodState.moodSource = null;
     moodState.manuallySelected = false;
+    moodState.selectedSubMood = null;
     moodState.selectedTags = [];
     moodState.journalText = '';
     setMoodWash(null);
     document.getElementById('journal-input').value = '';
     document.getElementById('char-counter').textContent = '0 / 280';
+    const subRow = document.getElementById('sub-mood-row');
+    if (subRow) subRow.innerHTML = '';
+    const subBlock = document.getElementById('sub-mood-block');
+    if (subBlock) subBlock.style.display = 'none';
 
     renderMoodRow();
+    renderSubMoodRow();
     renderTagsGrid();
     renderWeekStrip();
     renderStreak();
@@ -489,12 +550,19 @@ function renderEntryCards() {
 
         const preview = entry.note || '<em style="color:var(--text-2);">No note added.</em>';
 
+        const subMoodHTML = entry.subMoodLabel
+            ? `<span class="entry-submood-pill">${entry.subMoodLabel}</span>`
+            : '';
+
         card.innerHTML = `
 <div class="entry-card-top">
 <div style="display:flex;align-items:center;gap:10px;">
   ${moodCircleHTML(mood, 36)}
   <div>
-    <div style="font-size:13px;font-weight:500;color:var(--text-1);">${mood.label}</div>
+        <div class="entry-mood-meta">
+            <span class="entry-mood-label">${mood.label}</span>
+            ${subMoodHTML}
+        </div>
     <div class="entry-date">${formatDate(entry.date)}</div>
   </div>
 </div>
@@ -720,6 +788,7 @@ function switchView(view) {
     if (view === 'checkin') {
         renderWeekStrip();
         renderMoodRow();
+        renderSubMoodRow();
         renderTagsGrid();
         renderGreeting();
         updateSaveButton();
