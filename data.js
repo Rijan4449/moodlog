@@ -9,6 +9,43 @@ const MOODS = [
     { key: 'good', label: 'Good', emoji: '🙂', color: '#E8A87C', ring: '#E8A87C' },
     { key: 'great', label: 'Great', emoji: '😄', color: '#E88C8C', ring: '#E88C8C' },
 ];
+const SUB_MOODS = {
+    awful: [
+        { key: 'devastated', label: 'Devastated', emoji: '😭', color: '#9B8EC4' },
+        { key: 'hopeless', label: 'Hopeless', emoji: '😞', color: '#A090C8' },
+        { key: 'disgusted', label: 'Disgusted', emoji: '🤢', color: '#8E7FBE' },
+        { key: 'terrified', label: 'Terrified', emoji: '😱', color: '#B5A6D6' },
+        { key: 'ashamed', label: 'Ashamed', emoji: '😔', color: '#A89CCC' },
+    ],
+    bad: [
+        { key: 'sad', label: 'Sad', emoji: '😢', color: '#8AB89A' },
+        { key: 'anxious', label: 'Anxious', emoji: '😰', color: '#92BEA2' },
+        { key: 'angry', label: 'Angry', emoji: '😠', color: '#9EC4AA' },
+        { key: 'lonely', label: 'Lonely', emoji: '🫂', color: '#86B496' },
+        { key: 'exhausted', label: 'Exhausted', emoji: '😩', color: '#94BAA4' },
+    ],
+    okay: [
+        { key: 'neutral', label: 'Neutral', emoji: '😐', color: '#E8C87A' },
+        { key: 'confused', label: 'Confused', emoji: '😕', color: '#EDD080' },
+        { key: 'bored', label: 'Bored', emoji: '😑', color: '#E4C474' },
+        { key: 'pensive', label: 'Pensive', emoji: '🤔', color: '#EAC97E' },
+        { key: 'nostalgic', label: 'Nostalgic', emoji: '🌅', color: '#E6C676' },
+    ],
+    good: [
+        { key: 'happy', label: 'Happy', emoji: '😊', color: '#E09A6C' },
+        { key: 'relieved', label: 'Relieved', emoji: '😮‍💨', color: '#E4A272' },
+        { key: 'grateful', label: 'Grateful', emoji: '🙏', color: '#D89468' },
+        { key: 'motivated', label: 'Motivated', emoji: '💪', color: '#E6A070' },
+        { key: 'peaceful', label: 'Peaceful', emoji: '😌', color: '#DCA074' },
+    ],
+    great: [
+        { key: 'ecstatic', label: 'Ecstatic', emoji: '🤩', color: '#E07878' },
+        { key: 'proud', label: 'Proud', emoji: '😤', color: '#E48080' },
+        { key: 'excited', label: 'Excited', emoji: '🥳', color: '#E27C7C' },
+        { key: 'inspired', label: 'Inspired', emoji: '✨', color: '#E68484' },
+        { key: 'loved', label: 'Loved', emoji: '🥰', color: '#E07676' },
+    ],
+};
 const MOOD_SCORE = { awful: 1, bad: 2, okay: 3, good: 4, great: 5 };
 const MOOD_KEYS = ['awful', 'bad', 'okay', 'good', 'great'];
 
